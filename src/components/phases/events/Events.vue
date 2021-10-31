@@ -1,9 +1,9 @@
 <template>
 <Hud />
 <div id="event-stream">
+  <Production v-if="!hideProduction" @done="hideProduction = true"/>
   <div id="event-stream--year">
     {{year}}
-    <div id="event-stream-timer-fill" :style="{width: `${progress}%`}"></div>
   </div>
   <Globe id="events-globe" ref="globe" />
   <Project v-if="completedProjects.length > 0" :id="completedProjects[0]" @click="() => completedProjects.shift()"/>
@@ -23,13 +23,12 @@ import state from '/src/state';
 import {sign} from 'lib/util';
 import Event from './Event.vue';
 import Project from './Project.vue';
+import Production from './Production.vue';
 import Hud from 'components/Hud.vue';
 import Globe from 'components/Globe.vue'
 import EventsMixin from 'components/EventsMixin';
 import regionsToTiles from '/assets/surface/regions_to_tiles.json';
 import iconEvents from '/assets/content/icon_events.json';
-
-const MS_PER_YEAR = 6000;
 
 function randChoice(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -44,6 +43,7 @@ export default {
       time: 0,
       toasts: [],
       predialogue: true,
+      hideProduction: true,
       year: state.gameState.world.year,
       completedProjects: [],
     };
@@ -53,17 +53,13 @@ export default {
     Globe,
     Event,
     Project,
+    Production,
   },
   mounted() {
     this.start();
   },
   activated() {
     this.start();
-  },
-  computed: {
-    progress() {
-      return this.time/MS_PER_YEAR * 100;
-    }
   },
   methods: {
     start() {
@@ -77,9 +73,9 @@ export default {
       }
 
       // Cache starting values for report
-      this._startYear = state.gameState.world.year;
+      this.startYear = state.gameState.world.year;
       state.cycleStartState = {
-        year: this._startYear,
+        year: this.startYear,
         extinctionRate: state.gameState.world.extinction_rate,
         contentedness: state.gameState.contentedness,
         temperature: state.gameState.world.temperature,
@@ -88,58 +84,29 @@ export default {
       if (!this.globe) {
         this.$refs.globe.onReady = (globe) => {
           this.globe = globe;
-          this.startYear();
+          this.nextYear();
         };
       } else {
-        this.startYear();
+        this.nextYear();
       }
     },
-    startYear() {
-      this.time = 0;
-      let last = performance.now();
-      let iconEvents = game.rollIconEvents();
-      console.log('ICON EVENTS:');
-      console.log(iconEvents);
-      const tick = (timestamp) => {
-        let elapsed = timestamp - last;
-        last = timestamp;
+    nextYear() {
+        this.completedProjects = game.step();
+        this.year = state.gameState.world.year;
 
-        if (!this.showingEvent) {
-          this.time += elapsed;
+        this.hideProduction = false;
+        this.rollEvent();
 
-          if (this.time >= MS_PER_YEAR) {
-            this.completedProjects = game.step();
-            this.year = state.gameState.world.year;
-
-            this.rollEvent();
-            return;
-
-          } else {
-            // TODO need to ensure all events play out before end of year
-            if (iconEvents.length > 0 && Math.random() < 0.05) {
-              let [eventId, regionId] = iconEvents.shift();
-              game.applyEvent(eventId, regionId);
-              let icon = this.showEventOnGlobe(eventId, regionId);
-
-              // If autoclickers for this event, roll for autoclick
-              if (icon && eventId in state.gameState.autoclickers) {
-                let chance = state.gameState.autoclickers[eventId];
-                setTimeout(() => {
-                  if (Math.random() <= chance) {
-                    this.globe.respondToEvent(icon.mesh, icon.hexIdx);
-                  }
-                }, 500);
-              }
-            }
-          }
-        }
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
+        let iconEvents = game.rollIconEvents();
+        iconEvents.forEach(([eventId, regionId]) => {
+          let icon = this.showEventOnGlobe(eventId, regionId);
+          // TODO apply event with effects at end of year
+          /* game.applyEvent(eventId, regionId); */
+        });
     },
     rollEvent() {
       // Go to report phase
-      if (state.gameState.world.year > this._startYear
+      if (state.gameState.world.year > this.startYear
         && state.gameState.world.year % 5 == 0) {
         state.phase = 'REPORT';
         return;
@@ -153,12 +120,12 @@ export default {
       if (this.hasEvent) {
         this.showEvent();
       } else {
-        this.startYear();
+        this.nextYear();
       }
     },
     afterEvents() {
       this.predialogue = false;
-      this.startYear();
+      this.nextYear();
     },
     applyEmissions() {
       let world = state.gameState.world;
@@ -211,10 +178,6 @@ export default {
   bottom: 0;
 }
 
-#event-stream-timer-fill {
-  height: 2px;
-  background: red;
-}
 #event-stream--year {
   position: absolute;
   left: 0;

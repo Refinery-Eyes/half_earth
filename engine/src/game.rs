@@ -181,7 +181,7 @@ impl Game {
             industries: content::industries(),
             npcs: content::npcs(),
 
-            runs: 0,
+            runs: 1, // TODO temp
             requests: Vec::new(),
 
             output_modifier: outputs!(
@@ -203,6 +203,7 @@ impl Game {
             feedstocks: consts::FEEDSTOCK_RESERVES,
             byproducts: byproducts!(),
             produced: outputs!(),
+            produced_by_process: Vec::new(),
             consumed_resources: resources!(),
             consumed_feedstocks: feedstocks!(),
         };
@@ -314,6 +315,7 @@ pub struct State {
     pub resources: ResourceMap<f32>,
     pub feedstocks: FeedstockMap<f32>,
     pub produced: OutputMap<f32>,
+    pub produced_by_process: Vec<f32>,
     pub consumed_resources: ResourceMap<f32>,
     pub consumed_feedstocks: FeedstockMap<f32>,
 }
@@ -422,10 +424,12 @@ impl State {
             .map(|p| p.production_order(&self.output_demand)).collect();
 
         // Run production function
-        let (produced_by_type,
+        let (produced_by_process,
+             produced_by_type,
              consumed_resources,
              consumed_feedstocks,
              byproducts) = produce(&orders, &self.resources, &self.feedstocks);
+        self.produced_by_process = produced_by_process;
         self.produced = produced_by_type * self.output_modifier;
         self.byproducts += byproducts;
 

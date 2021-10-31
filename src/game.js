@@ -9,6 +9,7 @@ let game = GameInterface.new(Difficulty.Normal);
 // and compute some additional variables
 function updateState() {
   state.gameState = game.state();
+  console.log(state.gameState.output_demand);
 
   let world = state.gameState.world;
   state.gameState.contentedness = world.regions.reduce((acc, r) => {

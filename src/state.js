@@ -20,6 +20,11 @@ const init = {
     },
   },
 
+  tokens: {
+    food: 0,
+    energy: 0,
+  },
+
   projects: [],
   processes: [],
 }
