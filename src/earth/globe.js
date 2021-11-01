@@ -38,6 +38,7 @@ class Globe {
     });
     el.appendChild(this.scene.renderer.domElement);
     this._onReady = [];
+    this._onIconSelect = [];
     this.pings = [];
 
     this.pauseRotation = false;
@@ -46,6 +47,10 @@ class Globe {
 
   onReady(fn) {
     this._onReady.push(fn);
+  }
+
+  onIconSelect(fn) {
+    this._onIconSelect.push(fn);
   }
 
   async init() {
@@ -103,7 +108,11 @@ class Globe {
         intersects.forEach((intersect) => {
           let mesh = intersect.object;
           let hexIdx = mesh.userData.hexIdx;
-          this.respondToEvent(mesh, hexIdx);
+          // TODO not using this for card-version
+          // this.respondToEvent(mesh, hexIdx);
+          this._onIconSelect.forEach((fn) => {
+            fn(mesh.userData);
+          });
         });
       }
     });
@@ -133,6 +142,7 @@ class Globe {
     await this.updateSurface();
   }
 
+  // TODO not using this for card-version
   respondToEvent(mesh, hexIdx) {
     this.pingIcon('political_capital', hexIdx);
     game.changePoliticalCapital(1);
@@ -174,9 +184,10 @@ class Globe {
     return iconMesh;
   }
 
-  showIcon(iconName, hexIdx) {
+  showIcon(iconName, hexIdx, data) {
     let iconMesh = this.hexsphere.showIcon(iconName, hexIdx, 0.75, true);
-    this.pings.push({mesh: null, icon: iconMesh});
+    iconMesh.userData = {...data, ...iconMesh.userData};
+    // this.pings.push({mesh: null, icon: iconMesh});
     return iconMesh;
   }
 

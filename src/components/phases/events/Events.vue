@@ -5,6 +5,7 @@
   <div id="event-stream--year">
     {{year}}
   </div>
+  <IconEvent v-if="focusedIconEvent" :event="focusedIconEvent.event" :region="focusedIconEvent.region" />
   <Globe id="events-globe" ref="globe" />
   <Project v-if="completedProjects.length > 0" :id="completedProjects[0]" @click="() => completedProjects.shift()"/>
   <Dialogue v-if="event && predialogue" :dialogue="event.dialogue" @done="nextEvent" @select="selectChoice" />
@@ -14,6 +15,7 @@
       <div class="toast--body"><img :src="`/assets/icons/pips/${toast.icon}.png`"> {{toast.desc}}</div>
     </div>
   </div>
+  <button id="next-year-button" v-if="hideProduction" @click="endYear">Next Year</button>
 </div>
 </template>
 
@@ -24,6 +26,7 @@ import {sign} from 'lib/util';
 import Event from './Event.vue';
 import Project from './Project.vue';
 import Production from './Production.vue';
+import IconEvent from './IconEvent.vue';
 import Hud from 'components/Hud.vue';
 import Globe from 'components/Globe.vue'
 import EventsMixin from 'components/EventsMixin';
@@ -44,8 +47,10 @@ export default {
       toasts: [],
       predialogue: true,
       hideProduction: true,
+      focusedIconEvent: null,
       year: state.gameState.world.year,
       completedProjects: [],
+      iconEvents: [],
     };
   },
   components: {
@@ -54,6 +59,7 @@ export default {
     Event,
     Project,
     Production,
+    IconEvent,
   },
   mounted() {
     this.start();
@@ -84,6 +90,11 @@ export default {
       if (!this.globe) {
         this.$refs.globe.onReady = (globe) => {
           this.globe = globe;
+          this.globe.onIconSelect((data) => {
+            console.log('icon selected:');
+            console.log(data);
+            this.focusedIconEvent = data;
+          });
           this.nextYear();
         };
       } else {
@@ -97,12 +108,17 @@ export default {
         this.hideProduction = false;
         this.rollEvent();
 
-        let iconEvents = game.rollIconEvents();
-        iconEvents.forEach(([eventId, regionId]) => {
+        this.iconEvents = game.rollIconEvents();
+        this.iconEvents.forEach(([eventId, regionId]) => {
           let icon = this.showEventOnGlobe(eventId, regionId);
-          // TODO apply event with effects at end of year
-          /* game.applyEvent(eventId, regionId); */
         });
+    },
+    endYear() {
+      this.iconEvents.forEach(([eventId, regionId]) => {
+        // TODO take into account player actions
+        game.applyEvent(eventId, regionId);
+      });
+      this.nextYear();
     },
     rollEvent() {
       // Go to report phase
@@ -124,8 +140,9 @@ export default {
       }
     },
     afterEvents() {
-      this.predialogue = false;
-      this.nextYear();
+      // TODO
+      /* this.predialogue = false; */
+      /* this.nextYear(); */
     },
     applyEmissions() {
       let world = state.gameState.world;
@@ -151,7 +168,10 @@ export default {
         let tiles = regionsToTiles[region.name];
         let hexIdx = randChoice(tiles.inland.concat(tiles.coasts));
         // let label = sign(ev.effect.value);
-        let mesh = this.globe.showIcon(ev.icon, hexIdx);
+        let mesh = this.globe.showIcon(ev.icon, hexIdx, {
+          event: ev,
+          region,
+        });
         [...Array(Math.abs(ev.effect.value)).keys()].forEach((_) => {
           this.globe.pingIcon('discontent', hexIdx)
         });
@@ -216,5 +236,12 @@ export default {
 
 #event-stream .dialogue {
   background: rgba(255,255,255,0.25);
+}
+
+#next-year-button {
+  position: absolute;
+  bottom: 1em;
+  left: 50%;
+  transform: translate(-50%, 0);
 }
 </style>

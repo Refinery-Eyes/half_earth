@@ -1019,12 +1019,17 @@ pub fn processes() -> Vec<Process> {
             name: "Grey Hydrogen",
             output: Output::Fuel,
             mix_share: 0.0,
-            feedstock: (Feedstock::Coal, 0.0),
+            feedstock: (Feedstock::NaturalGas, 0.1018),
             resources: resources!(
-
+                electricity: 0.009,
+                land: 0.005289,
+                fuel: 46.4,
+                water: 0.27
             ),
             byproducts: byproducts!(
-
+                n2o: 0.0,
+                ch4: 0.912,
+                co2: 75.6
             ),
             locked: false,
             status: ProcessStatus::Neutral,
@@ -1038,17 +1043,22 @@ pub fn processes() -> Vec<Process> {
             name: "Blue Hydrogen",
             output: Output::Fuel,
             mix_share: 0.0,
-            feedstock: (Feedstock::NaturalGas, 0.0),
+            feedstock: (Feedstock::NaturalGas, 0.1139),
             resources: resources!(
-
+                water: 0.27,
+                electricity: 0.034,
+                fuel: 46.4,
+                land: 0.0011786
             ),
             byproducts: byproducts!(
-
+                co2: 45.85,
+                n2o: 0.0,
+                ch4: 1.07
             ),
             locked: false,
             status: ProcessStatus::Neutral,
             features: vec![
-
+                ProcessFeature::IsCCS
             ],
             output_modifier: 1.0
         },
@@ -1059,7 +1069,7 @@ pub fn processes() -> Vec<Process> {
             mix_share: 0.0,
             feedstock: (Feedstock::Other, 0.27),
             resources: resources!(
-                land: 26.305,
+                land: 0.529,
                 electricity: 46.4,
                 water: 0.27,
                 fuel: 0.0
@@ -2536,7 +2546,9 @@ pub fn projects() -> Vec<Project> {
             estimate: 0,
             points: 0,
             cost_modifier: 1.0,
-            upgrades: vec![]
+            upgrades: vec![
+
+            ]
         },
         Project {
             id: 47,
@@ -2670,7 +2682,9 @@ pub fn projects() -> Vec<Project> {
             estimate: 0,
             points: 0,
             cost_modifier: 1.0,
-            upgrades: vec![]
+            upgrades: vec![
+
+            ]
         },
         Project {
             id: 53,
@@ -6344,7 +6358,7 @@ pub fn events() -> Vec<Event> {
             id: 117,
             name: "TEST ICON",
             kind: EventType::Icon,
-            locked: true,
+            locked: false,
             effects: vec![
                 Effect::LocalVariable(LocalVariable::Outlook, -1.0)
             ],

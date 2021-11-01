@@ -648,10 +648,16 @@ if __name__ == '__main__':
             icon_events[id] = {
                 'name': ev['name'],
                 'icon': ev['icon'],
-                'effect': {
+                'effect': {             # Show effects as floating icons
                     'type': effs[0][0],
                     'value': effs[0][1],
-                }
+                },
+                'effects': [{
+                    'type': e['type'],
+                    'subtype': e.get('subtype'),
+                    'entity': ids.get(e.get('entity')),
+                    'param': get_param(e)
+                } for e in ev.get('effects', [])]
             }
             icons.add(ev['icon'])
 
