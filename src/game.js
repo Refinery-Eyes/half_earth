@@ -149,6 +149,22 @@ function totalIncomeLevel() {
   return game.total_income_level();
 }
 
+function establishTeam(team) {
+  game.establish_team(team.id);
+  updateState();
+}
+
+function trainTeam(team) {
+  game.train_team(team.id);
+  updateState();
+}
+
+function stepTeams() {
+  game.step_teams();
+  updateState();
+}
+
+
 updateState();
 
 export default {
@@ -161,4 +177,5 @@ export default {
   setProjectPoints, startProject, stopProject, upgradeProject,
   rollPlanningEvents, rollBreaksEvents, rollIconEvents,
   rollWorldEvents, rollReportEvents, rollWorldStartEvents,
-  selectChoice, applyEvent, checkRequests};
+  selectChoice, applyEvent, checkRequests,
+  establishTeam, trainTeam, stepTeams};

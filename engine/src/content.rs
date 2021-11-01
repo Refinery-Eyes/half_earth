@@ -8,6 +8,7 @@ use crate::production::{Process, ProcessFeature, ProcessStatus};
 use crate::kinds::{Resource, Output, Feedstock, Byproduct, ByproductMap, ResourceMap};
 use crate::events::{Event, Choice, Effect, Flag, Probability, Likelihood, Condition, Comparator, WorldVariable, LocalVariable, PlayerVariable};
 use crate::projects::{Status as ProjectStatus, Type as ProjectType};
+use crate::teams::{Team, Aspect};
 use crate::events::{Type as EventType};
 use crate::npcs::NPC;
 
@@ -6625,6 +6626,21 @@ pub fn npcs() -> Vec<NPC> {
             id: 4,
             name: "The Half-Earth Socialists",
             relationship: 0.0
+        }
+    ]
+}
+
+pub fn teams() -> Vec<Team> {
+    vec![
+        Team {
+            id: 0,
+            name: "Test Team",
+            locked: false,
+            aspects: vec![
+                Aspect::Flood
+            ],
+            establish_cost: 30,
+            train_cost: 20
         }
     ]
 }

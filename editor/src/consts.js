@@ -368,6 +368,14 @@ const EVENT_TYPES = [
   'Icon',       // Occur in the world/event stream, but only as icons
 ];
 
+const ASPECTS = [
+  'Flood',
+  'Fire',
+  'Control',
+  'Health',
+  'Construction',
+];
+
 export default {
   OUTPUTS,
   RESOURCES,
@@ -380,5 +388,6 @@ export default {
   PROBABILITIES,
   INCOME_LEVELS,
   SPEAKERS,
-  EVENT_TYPES
+  EVENT_TYPES,
+  ASPECTS,
 };

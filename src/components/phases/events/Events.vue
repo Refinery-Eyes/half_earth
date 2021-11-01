@@ -118,6 +118,13 @@ export default {
         // TODO take into account player actions
         game.applyEvent(eventId, regionId);
       });
+      let prevTeams = [...state.gameState.active_teams];
+      game.stepTeams();
+
+      let changedTeams = prevTeams.filter((t, i) => t.status !== state.gameState.active_teams[i].status);
+      console.log('Changed teams:');
+      console.log(changedTeams);
+
       this.nextYear();
     },
     rollEvent() {

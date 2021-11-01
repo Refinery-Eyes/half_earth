@@ -27,6 +27,7 @@ use crate::production::{Process, ProcessFeature, ProcessStatus};
 use crate::kinds::{Resource, Output, Feedstock, Byproduct, ByproductMap, ResourceMap};
 use crate::events::{Event, Choice, Effect, Flag, Probability, Likelihood, Condition, Comparator, WorldVariable, LocalVariable, PlayerVariable};
 use crate::projects::{Status as ProjectStatus, Type as ProjectType};
+use crate::teams::{Team, Aspect};
 use crate::events::{Type as EventType};
 use crate::npcs::NPC;
 '''
@@ -126,6 +127,14 @@ specs = {
         'id': None,
         'name': None,
         'relationship': 0
+    },
+    'Team': {
+        'id': None,
+        'name': None,
+        'locked': 'false',
+        'aspects': [],
+        'establish_cost': 0,
+        'train_cost': 0,
     },
     'Probability': {
         'likelihood': None,
@@ -317,11 +326,17 @@ def define_field(k, v, item):
         fields = filter(lambda x: x[0] in valid_resources, v.items())
         return 'resources: resources!(\n{}\n)'.format(
                     indent(define_fields(fields, item)))
+    elif k == 'aspects':
+        aspects = ['Aspect::{}'.format(a) for a in v]
+        return 'aspects: vec![\n{}\n]'.format(
+                    indent(',\n'.join(aspects)))
     if k == 'cost':
         if item.get('_type') == 'Project':
             return 'cost: 0'
         else:
             return 'cost: {}'.format(v)
+    if k == 'train_cost' or k == 'establish_cost':
+        return '{}: {}'.format(k, v)
     if k == 'level':
         return 'level: 0'
     elif k == 'base_cost':
@@ -588,6 +603,7 @@ if __name__ == '__main__':
     rust_output.append(define_content_fn('projects', 'Project'))
     rust_output.append(define_content_fn('events', 'Event'))
     rust_output.append(define_content_fn('npcs', 'NPC'))
+    rust_output.append(define_content_fn('teams', 'Team'))
     with open('engine/src/content.rs', 'w') as f:
         f.write('\n\n'.join(rust_output))
 
@@ -737,6 +753,26 @@ if __name__ == '__main__':
         processes.append(process)
     with open('assets/content/processes.json', 'w') as f:
         json.dump(processes, f)
+
+    teams = []
+    for p in items_by_type['Team']:
+        id = p['id']
+        image = p.get('image', {})
+        fname = image.get('image', None)
+        attribution = image.get('attribution', None)
+        team = {
+            'image': {
+                'fname': fname,
+                'attribution': attribution,
+            },
+        }
+        if fname:
+            frm = 'editor/uploads/{}'.format(fname)
+            to = 'assets/content/images/{}'.format(fname)
+            shutil.copy(frm, to)
+        teams.append(team)
+    with open('assets/content/teams.json', 'w') as f:
+        json.dump(teams, f)
 
     npcs = []
     for p in items_by_type['NPC']:

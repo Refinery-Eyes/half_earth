@@ -7,6 +7,7 @@
   <Initiatives v-else-if="page == PAGES.INITIATIVES" @close="page = null" />
   <Processes v-else-if="page == PAGES.PROCESSES" @close="page = null" />
   <Coalition v-else-if="page == PAGES.COALITION" @close="page = null" />
+  <Teams v-else-if="page == PAGES.TEAMS" @close="page = null" />
   <Dashboard v-else-if="page == PAGES.DASHBOARD" @close="page = null" />
   <div v-else class="planning--menu">
     <button v-for="p in Object.keys(PAGES)" @click="select(p)">
@@ -26,6 +27,7 @@ import Processes from './Processes.vue';
 import Initiatives from './Initiatives.vue';
 import Coalition from './Coalition.vue';
 import Dashboard from './Dashboard.vue';
+import Teams from './Teams.vue';
 import EventsMixin from 'components/EventsMixin';
 import Hud from 'components/Hud.vue';
 import EVENTS from '/assets/content/events.json';
@@ -36,8 +38,9 @@ const PAGES = {
   POLICIES: 2,
   PROCESSES: 3,
   COALITION: 4,
-  DASHBOARD: 5,
-  CONTINUE: 6
+  TEAMS: 5,
+  DASHBOARD: 6,
+  CONTINUE: 7
 }
 
 export default {
@@ -49,6 +52,7 @@ export default {
     Initiatives,
     Processes,
     Coalition,
+    Teams,
     Dashboard
   },
   created() {
@@ -109,6 +113,8 @@ export default {
           return "/assets/placeholders/processes_win98.png";
         case 'COALITION':
           return "/assets/placeholders/coalition_win98.png";
+        case 'TEAMS':
+          return "/assets/placeholders/teams_win98.png";
         default:
           return "/assets/placeholders/chart.png";
       }

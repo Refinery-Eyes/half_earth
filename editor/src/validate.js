@@ -78,6 +78,12 @@ function hasUnlocker(item) {
         return validType && effect.entity === item.id;
       });
     }
+    case 'Team': {
+      return _itemEffects().some((effect) => {
+        let validType = effect.type == 'UnlocksTeam';
+        return validType && effect.entity === item.id;
+      });
+    }
     default: {
       return true
     }
@@ -254,6 +260,30 @@ const SPECS = {
         case 'resources':
           return requireNonEmptyObj(item.resources) && requireResources(item.resources);
         case 'locked':
+          if (item.locked === undefined) item.locked = false;
+          return item.locked == hasUnlocker(item);
+        default:
+          return true;
+      }
+    }
+  },
+
+  Team: {
+    key: 'name',
+    validate: ['name', 'locked', 'aspects', 'establish_cost', 'train_cost'],
+    questions: ['name', 'notes'],
+    validateKey: (item, key) => {
+      switch (key) {
+        case 'name':
+          return requireAtLeastOne(item.name);
+        case 'aspects':
+          return requireAtLeastOne(item.aspects);
+        case 'establish_cost':
+          return requirePositiveInclZero(item.establish_cost);
+        case 'train_cost':
+          return requirePositiveInclZero(item.train_cost);
+        case 'locked':
+          console.log(item.locked);
           if (item.locked === undefined) item.locked = false;
           return item.locked == hasUnlocker(item);
         default:

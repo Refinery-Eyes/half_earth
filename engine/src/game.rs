@@ -5,8 +5,9 @@ use crate::projects::{Project, Status, Type as ProjectType};
 use crate::production::{ProductionOrder, Process, ProcessStatus, produce, calculate_required, update_mixes};
 use crate::kinds::{OutputMap, ResourceMap, ByproductMap, FeedstockMap};
 use crate::events::{EventPool, Effect, Flag, Type as EventType};
+use crate::teams::{Team, TeamInstance, TeamStatus};
 use crate::{content, consts};
-use rand::{SeedableRng, rngs::SmallRng};
+use rand::{Rng, SeedableRng, rngs::SmallRng};
 use serde::Serialize;
 use crate::utils;
 use wasm_bindgen::prelude::*;
@@ -155,6 +156,56 @@ impl GameInterface {
     pub fn total_income_level(&self) -> f32 {
         self.game.state.world.regions.iter().map(|r| r.adjusted_income()).sum()
     }
+
+    pub fn establish_team(&mut self, team_id: usize) {
+        let team = TeamInstance {
+            id: self.game.state.active_teams.len(),
+            team_id,
+            status: TeamStatus::Ready,
+            level: 1,
+            xp: 0
+        };
+        self.game.state.active_teams.push(team);
+    }
+
+    pub fn train_team(&mut self, team_id: usize) {
+        self.game.state.active_teams[team_id].status = TeamStatus::Training;
+    }
+
+    pub fn step_teams(&mut self) {
+        for team in &mut self.game.state.active_teams {
+            match team.status {
+                TeamStatus::Training => {
+                    team.status = TeamStatus::Ready;
+                    team.level += 1;
+                },
+                TeamStatus::Injured => {
+                    team.status = TeamStatus::Ready;
+                },
+                TeamStatus::Deployed => {
+                    team.status = TeamStatus::Ready;
+                    team.gain_xp();
+                },
+                TeamStatus::DeployedAtRisk => {
+                    team.status = if self.rng.gen::<f32>() <= 0.25 {
+                        TeamStatus::Injured
+                    } else {
+                        TeamStatus::Ready
+                    };
+                    team.gain_xp();
+                },
+                TeamStatus::DeployedInjured => {
+                    if self.rng.gen::<f32>() <= 0.25 {
+                        team.status = TeamStatus::Lost;
+                    } else {
+                        team.status = TeamStatus::Injured;
+                        team.gain_xp();
+                    }
+                },
+                _ => ()
+            }
+        }
+    }
 }
 
 pub struct Game {
@@ -180,6 +231,9 @@ impl Game {
             processes: content::processes(),
             industries: content::industries(),
             npcs: content::npcs(),
+
+            teams: content::teams(),
+            active_teams: Vec::new(),
 
             runs: 1, // TODO temp
             requests: Vec::new(),
@@ -290,6 +344,9 @@ pub struct State {
     pub industries: Vec<Industry>,
     pub projects: Vec<Project>,
     pub processes: Vec<Process>,
+
+    pub teams: Vec<Team>,
+    pub active_teams: Vec<TeamInstance>,
 
     pub political_capital: isize,
     pub malthusian_points: usize,
