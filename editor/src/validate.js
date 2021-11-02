@@ -183,7 +183,7 @@ function validateDialogue(dialogue) {
 const SPECS = {
   Event: {
     key: 'name',
-    validate: ['name', 'probabilities', 'variables', 'locked', 'type', 'dialogue'],
+    validate: ['name', 'probabilities', 'variables', 'locked', 'type', 'dialogue', 'intensity', 'aspect'],
     questions: ['notes'],
     validateKey: (item, key) => {
       switch (key) {
@@ -197,6 +197,10 @@ const SPECS = {
           } else {
             return validateDialogue(item.dialogue);
           }
+        case 'intensity':
+          return item.type !== 'Icon' || requirePositive(item.intensity);
+        case 'aspect':
+          return item.type !== 'Icon' || requireOneOfChoice(item.aspect, consts.ASPECTS);
         case 'effects':
           return requireAtLeastOne(item.effects) && validateEffects(item.effects);
         case 'probabilities':
@@ -294,7 +298,7 @@ const SPECS = {
 
   Region: {
     key: 'name',
-    validate: ['name', 'health', 'outlook', 'income_level', 'population'],
+    validate: ['name', 'health', 'income_level', 'population'],
     questions: ['name', 'notes'],
     validateKey: (item, key) => {
       switch (key) {

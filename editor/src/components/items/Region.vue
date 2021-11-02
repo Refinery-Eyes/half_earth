@@ -29,13 +29,6 @@
       </div>
       <div>
         <label>
-          Outlook
-          <Tip>Starting outlook, from 0 to 1, with 1 meaning people are excited and optimistic about the future, and 0 meaning a region full of hopeless nihilists.</Tip>
-        </label>
-        <input v-model="localData.outlook" type="number" min="0" :class="flags('outlook')">
-      </div>
-      <div>
-        <label>
           Starting Population
           <Tip>Starting population</Tip>
         </label>
@@ -63,9 +56,6 @@
       </div>
       <div class="meta-pill split-pill" :class="{invalid: !localData.health}">
         <div>Health</div><div>{{localData.health || 'MISSING'}}</div>
-      </div>
-      <div class="meta-pill split-pill" :class="{invalid: !localData.outlook}">
-        <div>Outlook</div><div>{{localData.outlook || 'MISSING'}}</div>
       </div>
       <div class="meta-pill split-pill" :class="{invalid: !localData.population}">
         <div>Population</div><div>{{localData.population || 'MISSING'}}</div>

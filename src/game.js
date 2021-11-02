@@ -1,5 +1,5 @@
 import state from './state';
-import {GameInterface, Difficulty} from 'half-earth-engine';
+import {GameInterface, Difficulty, TeamStatus} from 'half-earth-engine';
 
 // TODO let player choose difficulty;
 // also; this needs to be re-created for each run.
@@ -14,7 +14,7 @@ function updateState() {
   let world = state.gameState.world;
   state.gameState.contentedness = world.regions.reduce((acc, r) => {
       return acc + r.base_contentedness + r.outlook;
-    }, 0)/world.regions.length;
+    }, 0);
   state.gameState.emissions = (world.co2_emissions + (world.n2o_emissions * 298.) + (world.ch4_emissions * 36.)) * 1e-15;
   state.gameState.population = world.regions.reduce((acc, r) => {
       return acc + r.population
@@ -55,6 +55,11 @@ function step() {
 
 function changePoliticalCapital(amount) {
   game.change_political_capital(amount);
+  updateState();
+}
+
+function changeLocalOutlook(amount, regionId) {
+  game.change_local_outlook(amount, regionId);
   updateState();
 }
 
@@ -164,6 +169,10 @@ function stepTeams() {
   updateState();
 }
 
+function setTeamStatus(team, status) {
+  game.set_team_status(team.id, status);
+  updateState();
+}
 
 updateState();
 
@@ -172,10 +181,11 @@ export default {
   setTgav,
   totalIncomeLevel,
   changePoliticalCapital,
+  changeLocalOutlook,
   banProcess, unbanProcess,
   promoteProcess, unpromoteProcess,
   setProjectPoints, startProject, stopProject, upgradeProject,
   rollPlanningEvents, rollBreaksEvents, rollIconEvents,
   rollWorldEvents, rollReportEvents, rollWorldStartEvents,
   selectChoice, applyEvent, checkRequests,
-  establishTeam, trainTeam, stepTeams};
+  establishTeam, trainTeam, stepTeams, setTeamStatus, TeamStatus};

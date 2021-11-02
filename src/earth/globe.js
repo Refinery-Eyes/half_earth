@@ -111,6 +111,7 @@ class Globe {
           // TODO not using this for card-version
           // this.respondToEvent(mesh, hexIdx);
           this._onIconSelect.forEach((fn) => {
+            mesh.userData.mesh = mesh; // TODO kinda hacky
             fn(mesh.userData);
           });
         });
@@ -241,9 +242,9 @@ class Globe {
     }
 
     // Rotate world
-    if (this.sphere && !this.pauseRotation) {
-      this.sphere.rotation.y += 0.003;
-    }
+    // if (this.sphere && !this.pauseRotation) {
+    //   this.sphere.rotation.y += 0.003;
+    // }
     this.tickPings();
 
     if (debug.fps) stats.end();

@@ -5,7 +5,10 @@
   <div id="event-stream--year">
     {{year}}
   </div>
-  <IconEvent v-if="focusedIconEvent" :event="focusedIconEvent.event" :region="focusedIconEvent.region" />
+  <IconEvent v-if="focusedIconEvent" :event="focusedIconEvent.event" :region="focusedIconEvent.region"
+    @close="focusedIconEvent = null"
+    @done="submitIconEvent"
+    />
   <Globe id="events-globe" ref="globe" />
   <Project v-if="completedProjects.length > 0" :id="completedProjects[0]" @click="() => completedProjects.shift()"/>
   <Dialogue v-if="event && predialogue" :dialogue="event.dialogue" @done="nextEvent" @select="selectChoice" />
@@ -15,7 +18,7 @@
       <div class="toast--body"><img :src="`/assets/icons/pips/${toast.icon}.png`"> {{toast.desc}}</div>
     </div>
   </div>
-  <button id="next-year-button" v-if="hideProduction" @click="endYear">Next Year</button>
+  <button id="next-year-button" v-if="hideProduction && !yearEnded" @click="endYear">Next Year</button>
 </div>
 </template>
 
@@ -45,12 +48,15 @@ export default {
       events,
       time: 0,
       toasts: [],
+      yearEnded: false,
       predialogue: true,
       hideProduction: true,
       focusedIconEvent: null,
       year: state.gameState.world.year,
       completedProjects: [],
       iconEvents: [],
+      resolvedIconEvents: [],
+      iconEventsData: [],
     };
   },
   components: {
@@ -72,7 +78,6 @@ export default {
       // Show any world start events
       if (this.hasEvent) {
         this.predialogue = true;
-        console.log(this.events);
         this.showEvent();
       } else {
         this.predialogue = false;
@@ -91,8 +96,6 @@ export default {
         this.$refs.globe.onReady = (globe) => {
           this.globe = globe;
           this.globe.onIconSelect((data) => {
-            console.log('icon selected:');
-            console.log(data);
             this.focusedIconEvent = data;
           });
           this.nextYear();
@@ -102,22 +105,46 @@ export default {
       }
     },
     nextYear() {
-        this.completedProjects = game.step();
-        this.year = state.gameState.world.year;
+      this.yearEnded = false;
+      this.completedProjects = game.step();
+      this.year = state.gameState.world.year;
 
-        this.hideProduction = false;
-        this.rollEvent();
+      this.hideProduction = false;
+      this.rollEvent();
 
-        this.iconEvents = game.rollIconEvents();
-        this.iconEvents.forEach(([eventId, regionId]) => {
-          let icon = this.showEventOnGlobe(eventId, regionId);
-        });
+      this.iconEvents = game.rollIconEvents();
+      this.iconEventsData = [];
+      this.resolvedIconEvents = [];
+      this.iconEvents.forEach(([eventId, regionId], id) => {
+        let icon = this.showEventOnGlobe(id, eventId, regionId);
+        this.iconEventsData.push(icon);
+      });
     },
     endYear() {
-      this.iconEvents.forEach(([eventId, regionId]) => {
-        // TODO take into account player actions
-        game.applyEvent(eventId, regionId);
+      this.yearEnded = true;
+      // Resolve unresolved icon events
+      this.iconEvents.forEach(([eventId, regionId], id) => {
+        if (!this.resolvedIconEvents.includes(id)) {
+          let icon = this.iconEventsData[id];
+          let effects = {
+            outlook: -icon.event.intensity - 1,
+            politicalCapital: 0,
+          };
+          // TODO if malthusian is among allies
+          let hasMalthusian = false;
+          if (hasMalthusian && (icon.region.income == 'Low' || icon.region.income == 'LowerMiddle')) {
+            this.politicalCapital = 5;
+          }
+
+          this.removeIcon(icon, effects);
+
+          if (effects.politicalCapital !== 0) {
+            game.changePoliticalCapital(effects.politicalCapital);
+          }
+          game.changeLocalOutlook(effects.outlook, icon.region.id);
+        }
       });
+
       let prevTeams = [...state.gameState.active_teams];
       game.stepTeams();
 
@@ -125,7 +152,14 @@ export default {
       console.log('Changed teams:');
       console.log(changedTeams);
 
-      this.nextYear();
+      setTimeout(() => {
+        this.nextYear();
+      }, 3500);
+    },
+    submitIconEvent(effects) {
+      let id = this.focusedIconEvent.id;
+      this.removeIcon(this.focusedIconEvent, effects);
+      this.resolvedIconEvents.push(id);
     },
     rollEvent() {
       // Go to report phase
@@ -167,20 +201,18 @@ export default {
         game.setTgav(tgav);
       });
     },
-    showEventOnGlobe(eventId, regionId) {
+    showEventOnGlobe(id, eventId, regionId) {
       let ev = iconEvents[eventId];
-      if (this.globe && regionId) {
+      if (this.globe && regionId !== undefined && regionId !== null) {
         // TODO distinguish inland vs coastal events
         let region = state.gameState.world.regions[regionId];
         let tiles = regionsToTiles[region.name];
         let hexIdx = randChoice(tiles.inland.concat(tiles.coasts));
         // let label = sign(ev.effect.value);
         let mesh = this.globe.showIcon(ev.icon, hexIdx, {
+          id,
           event: ev,
           region,
-        });
-        [...Array(Math.abs(ev.effect.value)).keys()].forEach((_) => {
-          this.globe.pingIcon('discontent', hexIdx)
         });
         this.toasts.push({
           icon: ev.icon,
@@ -189,9 +221,42 @@ export default {
         if (this.toasts.length > 3) {
           this.toasts.shift();
         }
-        return {hexIdx, mesh};
+        return {hexIdx, mesh, region, event: ev};
       }
     },
+    removeIcon(eventData, effects) {
+      let mesh = eventData.mesh;
+      mesh.parent.remove(mesh);
+      mesh.geometry.dispose();
+      mesh.material.dispose();
+      this.focusedIconEvent = null;
+
+      let outlook = Math.abs(effects.outlook) - 1;
+      this.globe.pingIcon('discontent', eventData.hexIdx);
+      let outlookInterval = setInterval(() => {
+        if (outlook <= 0) {
+          clearInterval(outlookInterval);
+        } else {
+          outlook--;
+          this.globe.pingIcon('discontent', eventData.hexIdx);
+        }
+      }, 250);
+
+      let pc = effects.politicalCapital - 1;
+      if (pc >= 0) {
+        setTimeout(() => {
+          this.globe.pingIcon('political_capital', eventData.hexIdx);
+          let pcInterval = setInterval(() => {
+            if (pc <= 0) {
+              clearInterval(pcInterval);
+            } else {
+              pc--;
+              this.globe.pingIcon('political_capital', eventData.hexIdx);
+            }
+          }, 250);
+        }, 500);
+      }
+    }
   },
 }
 </script>

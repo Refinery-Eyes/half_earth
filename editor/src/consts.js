@@ -325,6 +325,12 @@ const EFFECTS = {
     params: {
       'Change': Number
     }
+  },
+
+  ProtectLand: {
+    params: {
+      'Percent': Number
+    }
   }
 };
 
@@ -371,7 +377,11 @@ const EVENT_TYPES = [
 const ASPECTS = [
   'Flood',
   'Fire',
+  'Heat',
+  'Food',
+  'Energy',
   'Control',
+  'Force',
   'Health',
   'Construction',
 ];

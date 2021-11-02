@@ -1,24 +1,20 @@
 use serde::Serialize;
+use crate::events::Aspect;
+use wasm_bindgen::prelude::*;
 
-#[derive(Serialize)]
-pub enum Aspect {
-    Flood,
-    Fire,
-    Control,
-    Health,
-    Construction
-}
 
 #[derive(Serialize)]
 pub struct Team {
     pub id: usize,
     pub name: &'static str,
     pub locked: bool,
+    pub default: bool,
     pub aspects: Vec<Aspect>,
     pub establish_cost: usize,
     pub train_cost: usize,
 }
 
+#[wasm_bindgen]
 #[derive(Serialize)]
 pub enum TeamStatus {
     Ready,

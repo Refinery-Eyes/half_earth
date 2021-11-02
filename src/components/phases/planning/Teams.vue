@@ -9,7 +9,7 @@
       <div v-if="state.gameState.active_teams.length === 0">You have no teams.</div>
       <template v-else>
         <template v-for="team in state.gameState.active_teams">
-          <Team :team="team" />
+          <Team :team="team" :isPlanning="true" />
         </template>
       </template>
     </div>
@@ -41,7 +41,11 @@ import TEAMS from '/assets/content/teams.json';
 const aspectPips = {
   'Flood': 'flood',
   'Fire': 'wildfires',
-  'Control': 'attacks',
+  'Heat': 'heatwave',
+  'Food': 'food',
+  'Energy': 'power',
+  'Control': 'resistance',
+  'Force': 'attacks',
   'Health': 'disease',
   'Construction': 'initiative',
 };
@@ -85,6 +89,15 @@ export default {
 </script>
 
 <style>
+.teams {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+.teams .active-team {
+  margin-bottom: 0.5em;
+}
+
 .establish-teams {
   display: flex;
   flex-wrap: wrap;
@@ -98,6 +111,7 @@ export default {
   padding: 1em;
   text-align: center;
   max-width: 48%;
+  margin-bottom: 0.5em;
 }
 .team-template h3 {
   font-weight: normal;

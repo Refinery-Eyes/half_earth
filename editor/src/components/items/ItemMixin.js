@@ -22,6 +22,7 @@ import ChoicesSummary from '../subs/ChoicesSummary.vue';
 import ResourcesSummary from '../subs/ResourcesSummary.vue';
 import ByproductsSummary from '../subs/ByproductsSummary.vue';
 import OutputsSummary from '../subs/OutputsSummary.vue';
+import IconResponses from '../subs/IconResponses.vue';
 import validate from '../../validate';
 import Autolinker from 'autolinker';
 
@@ -47,6 +48,7 @@ export default {
     ByproductsSummary, OutputsSummary,
     Outcomes, OutcomesSummary,
     Upgrades, UpgradesSummary,
+    IconResponses,
   },
   mounted() {
     this.$refs.root.querySelectorAll('textarea').forEach((el) => {

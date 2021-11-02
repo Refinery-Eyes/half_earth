@@ -42,10 +42,19 @@
           </div>
           <div v-if="localData.type == 'Icon'">
             <label>
-              Event Icon
-              <Tip>Filename of the event icon.</Tip>
+              Aspect
+              <Tip>Aspect of the icon event.</Tip>
             </label>
-            <input type="text" v-model="localData.icon" />
+            <select v-model="localData.aspect">
+              <option v-for="k in ASPECTS" :value="k">{{k}}</option>
+            </select>
+          </div>
+          <div v-if="localData.type == 'Icon'">
+            <label>
+              Intensity
+              <Tip>The pip/aspect intensity of the event.</Tip>
+            </label>
+            <input type="number" min="0" v-model="localData.intensity" :class="flags('intensity')" />
           </div>
           <div class="checkbox">
             <label :for="`${item.id}_locked`">
@@ -53,6 +62,13 @@
               <Tip>Does this event start locked?</Tip>
             </label>
             <input type="checkbox" :id="`${item.id}_locked`" v-model="localData.locked">
+          </div>
+          <div class="checkbox" v-if="localData.type != 'Icon'">
+            <label :for="`${item.id}_starter`">
+              Starter
+              <Tip>Is this a starter event (eligible to occur in first planning cycle)?</Tip>
+            </label>
+            <input type="checkbox" :id="`${item.id}_starter`" v-model="localData.starter">
           </div>
         </fieldset>
       </div>
@@ -78,6 +94,11 @@
       <div class="meta-pill">{{localData.name}}</div>
       <div class="meta-pill type-pill" :class="flags('type')">{{localData.type || 'MISSING TYPE'}}</div>
       <div class="meta-pill arc-pill" v-if="localData.arc">{{localData.arc}}</div>
+      <div class="meta-pill arc-pill split-pill" v-if="localData.aspect">
+        <div>{{localData.aspect}}</div>
+        <div>{{localData.intensity}}</div>
+      </div>
+      <div class="meta-pill" v-if="localData.starter">Starter</div>
       <div class="meta-pill" v-if="localData.locked" :class="flags('locked')">Locked{{flags('locked').invalid ? ' MISSING UNLOCKER' : ''}}</div>
       <div class="meta-pill" v-else-if="!localData.locked && flags('locked').invalid" :class="flags('locked')">UNLOCKABLE BUT NOT LOCKED</div>
     </div>
@@ -97,7 +118,7 @@
         <div class="item-missing invalid" v-else>[MISSING PROBABILITIES]</div>
 
         <EffectsSummary v-if="definedWithValues('effects')" :effects="localData.effects" />
-        <div class="item-missing invalid" v-else-if="localData.type == 'Icon' || localData.type == 'World'">[MISSING EFFECTS]</div>
+        <div class="item-missing invalid" v-else-if="localData.type == 'World'">[MISSING EFFECTS]</div>
       </div>
       <div class="item-summary-image" v-if="localData.type == 'World' && localData.image">
         <img class="image-preview" v-if="localData.image.image" :src="`/image/${localData.image.image}`"/>

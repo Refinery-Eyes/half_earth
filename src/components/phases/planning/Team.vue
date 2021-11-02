@@ -7,7 +7,9 @@
       </template>
     </template>
   </div>
-  {{team.status}}
+  <div class="active-team--text-status">
+    {{team.status}}
+  </div>
   <div class="active-team--status">
     <div class="active-team--health"><img :src="health" /></div>
     <div class="active-team--xp">
@@ -15,7 +17,7 @@
     </div>
     <div class="active-team--level">{{team.level}}</div>
   </div>
-  <button @click="train" v-if="team.status == 'Ready'">
+  <button @click="train" v-if="team.status == 'Ready' && isPlanning">
     Train {{trainCost}}<img class="pip" src="/assets/icons/pips/political_capital.png">
   </button>
 </div>
@@ -28,13 +30,17 @@ import state from '/src/state';
 const aspectPips = {
   'Flood': 'flood',
   'Fire': 'wildfires',
-  'Control': 'attacks',
+  'Heat': 'heatwave',
+  'Food': 'food',
+  'Energy': 'power',
+  'Control': 'resistance',
+  'Force': 'attacks',
   'Health': 'disease',
   'Construction': 'initiative',
 };
 
 export default {
-  props: ['team'],
+  props: ['team', 'isPlanning'],
   created() {
     this.pips = aspectPips;
   },
@@ -52,19 +58,18 @@ export default {
       }
     },
     aspects() {
-      return state.gameState.teams[this.team.id].aspects;
+      return state.gameState.teams[this.team.team_id].aspects;
     },
     trainCost() {
-      return state.gameState.teams[this.team.id].train_cost;
+      return state.gameState.teams[this.team.team_id].train_cost;
     }
   },
   methods: {
     train() {
-      let team = state.gameState.teams[this.team.id];
+      let team = state.gameState.teams[this.team.team_id];
       if (state.gameState.political_capital >= team.train_cost) {
         game.changePoliticalCapital(-team.train_cost);
         game.trainTeam(this.team);
-        /* game.levelUpTeam(this.team); */
       }
     }
   }

@@ -55,6 +55,10 @@ impl GameInterface {
         self.game.state.political_capital += amount;
     }
 
+    pub fn change_local_outlook(&mut self, amount: isize, region_id: usize) {
+        self.game.state.world.regions[region_id].outlook += amount as f32;
+    }
+
     pub fn set_event_choice(&mut self, event_id: usize, region_id: Option<usize>, choice_id: usize) {
         let effects = self.game.set_event_choice(event_id, choice_id);
         for effect in effects {
@@ -105,7 +109,7 @@ impl GameInterface {
     }
 
     pub fn roll_icon_events(&mut self) -> Result<JsValue, JsValue> {
-        Ok(serde_wasm_bindgen::to_value(&self.game.roll_events_of_kind(EventType::Icon, None, &mut self.rng))?)
+        Ok(serde_wasm_bindgen::to_value(&self.game.roll_events_of_kind(EventType::Icon, Some(10), &mut self.rng))?)
     }
 
     pub fn roll_world_events(&mut self) -> Result<JsValue, JsValue> {
@@ -158,14 +162,7 @@ impl GameInterface {
     }
 
     pub fn establish_team(&mut self, team_id: usize) {
-        let team = TeamInstance {
-            id: self.game.state.active_teams.len(),
-            team_id,
-            status: TeamStatus::Ready,
-            level: 1,
-            xp: 0
-        };
-        self.game.state.active_teams.push(team);
+        self.game.state.establish_team(team_id);
     }
 
     pub fn train_team(&mut self, team_id: usize) {
@@ -205,6 +202,10 @@ impl GameInterface {
                 _ => ()
             }
         }
+    }
+
+    pub fn set_team_status(&mut self, team_id: usize, status: TeamStatus) {
+        self.game.state.active_teams[team_id].status = status;
     }
 }
 
@@ -260,6 +261,7 @@ impl Game {
             produced_by_process: Vec::new(),
             consumed_resources: resources!(),
             consumed_feedstocks: feedstocks!(),
+            protected_land: 0.,
         };
 
         let (output_demand, _) = state.calculate_demand();
@@ -375,6 +377,7 @@ pub struct State {
     pub produced_by_process: Vec<f32>,
     pub consumed_resources: ResourceMap<f32>,
     pub consumed_feedstocks: FeedstockMap<f32>,
+    pub protected_land: f32,
 }
 
 impl State {
@@ -382,10 +385,36 @@ impl State {
         // Bit of a hack to generate initial state values
         self.step_production();
 
+        // Establish starting teams
+        let default_teams: Vec<usize> = self.teams.iter().filter_map(|t| {
+            if t.default {
+                Some(t.id)
+            } else {
+                None
+            }
+        }).collect();
+        for team_id in default_teams {
+            for _ in 0..2 {
+                self.establish_team(team_id);
+            }
+        }
+
         for project in &mut self.projects {
             project.update_cost(&self.output_demand);
         }
     }
+
+    pub fn establish_team(&mut self, team_id: usize) {
+        let team = TeamInstance {
+            id: self.active_teams.len(),
+            team_id,
+            status: TeamStatus::Ready,
+            level: 1,
+            xp: 0
+        };
+        self.active_teams.push(team);
+    }
+
 
     pub fn calculate_demand(&self) -> (OutputMap<f32>, ResourceMap<f32>) {
         // Aggregate demand across regions
@@ -480,13 +509,16 @@ impl State {
         let orders: Vec<ProductionOrder> = self.processes.iter()
             .map(|p| p.production_order(&self.output_demand)).collect();
 
+        // Apply land protection
+        self.resources.land = consts::STARTING_RESOURCES.land * (1. - self.protected_land);
+
         // Run production function
         let (produced_by_process,
              produced_by_type,
              consumed_resources,
              consumed_feedstocks,
              byproducts) = produce(&orders, &self.resources, &self.feedstocks);
-        self.produced_by_process = produced_by_process;
+        self.produced_by_process = produced_by_process; // TODO apply modifiers
         self.produced = produced_by_type * self.output_modifier;
         self.byproducts += byproducts;
 

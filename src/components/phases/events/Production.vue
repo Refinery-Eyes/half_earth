@@ -1,6 +1,16 @@
 <template>
 <div class="production">
-  <div class="production--processes" v-if="!showSurplus">
+  <div class="production--demand">
+    <div v-for="v, k in produced">
+      <template v-if="demand[k] !== undefined">
+        {{v}}/{{demand[k]}}{{icons[k]}}
+      </template>
+      <template v-else>
+        {{v}}{{icons[k]}}
+      </template>
+    </div>
+  </div>
+  <div class="production--processes">
     <div class="production--process" v-for="process in processes">
       <div class="production--process-name">{{process.name}}</div>
       <div class="production--process-amounts">
@@ -9,19 +19,20 @@
       </div>
     </div>
   </div>
-  <div class="production--demand">
-    <div v-for="v, k in demand">
-      {{icons[k]}}{{v}}
-    </div>
-  </div>
-  <div class="production--surplus" v-if="showSurplus">
+  <div class="production--surplus" v-if="surplus.food > 0 || surplus.energy > 0">
     <h2>Surplus</h2>
     <div>
-      <div>+{{surplus.energy}}<img src="/assets/icons/pips/power.png"></div>
-      <div>+{{surplus.food}}<img src="/assets/icons/pips/food.png"></div>
+      <div class="token" v-if="surplus.food > 0">
+        <img src="/assets/icons/pips/food.png">
+        <div class="minicard--count">+{{surplus.food}}</div>
+      </div>
+      <div class="token" v-if="surplus.energy > 0">
+        <img src="/assets/icons/pips/power.png">
+        <div class="minicard--count">+{{surplus.energy}}</div>
+      </div>
     </div>
-    <button @click="$emit('done')">Ok</button>
   </div>
+  <button @click="$emit('done')">Ok</button>
 </div>
 </template>
 
@@ -59,11 +70,11 @@ export default {
     let processes = state.gameState.processes.map((p, i) => {
       let baseAmount = state.gameState.produced_by_process[i];
       let amount = baseAmount * outputDemandUnits[convertOutput[p.output]];
-      amount = amount > 0 ? Math.max(Math.round(amount), 1) : 0;
+      amount = amount > 0 ? Math.max(Math.round(amount), 1) : Math.round(amount);
 
       let emissions = baseAmount * (p.byproducts.co2 + p.byproducts.ch4 * 36 + p.byproducts.n2o * 298);
       emissions *= 1e-15; // Gt CO2eq
-      emissions = emissions > 0 ? Math.max(Math.round(emissions), 1) : 0;
+      emissions = emissions > 0 ? Math.max(Math.round(emissions), 1) : Math.round(emissions);
       let data = {
         emissions,
         amount, ...p
@@ -75,45 +86,59 @@ export default {
         acc[k] = Math.round(state.gameState.output_demand[k] * outputDemandUnits[k]);
         return acc;
       }, {});
-    demand['emissions'] = 0;
+    let produced = Object.keys(state.gameState.produced).reduce((acc, k) => {
+        acc[k] = Math.round(state.gameState.produced[k] * outputDemandUnits[k]);
+        return acc;
+      }, {});
+    let byp = state.gameState.byproducts;
+    produced['emissions'] = Math.round((byp.co2 + byp.ch4 * 36 + byp.n2o * 298) * 1e-15); // Gt CO2eq;
+
+    let surplus = {
+      food: 0,
+      energy: 0,
+    };
+    surplus.food -= Math.min(0, demand.plant_calories);
+    surplus.food -= Math.min(0, demand.animal_calories);
+    surplus.energy -= Math.min(0, demand.electricity);
+    surplus.energy -= Math.min(0, demand.fuel);
+    state.tokens.food += surplus.food;
+    state.tokens.energy += surplus.energy;
+
     return {
       demand,
+      produced,
       processes,
-      showSurplus: false,
-      surplus: {
-        food: 0,
-        energy: 0,
-      }
+      surplus,
     }
   },
   mounted() {
-    let timeline = anime.timeline({
-      targets: this.demand,
-      round: 1,
-      easing: 'linear',
-      duration: 500,
-      complete: () => {
-        this.showSurplus = true;
-        this.surplus.food -= Math.min(0, this.demand.plant_calories);
-        this.surplus.food -= Math.min(0, this.demand.animal_calories);
-        this.surplus.energy -= Math.min(0, this.demand.electricity);
-        this.surplus.energy -= Math.min(0, this.demand.fuel);
-        state.tokens.food += this.surplus.food;
-        state.tokens.energy += this.surplus.energy;
-      }
-    });
-    let newDemand = {...this.demand};
-    this.processes.forEach((p) => {
-      newDemand[p.output] -= p.amount;
-      newDemand['emissions'] += p.emissions;
-      let demandTarget = {...newDemand};
-      timeline.add({
-        ...demandTarget,
-        complete: () => {
-          this.processes.shift();
-        }
-      }, '+=200');
-    });
+    /* let timeline = anime.timeline({ */
+    /*   targets: this.demand, */
+    /*   round: 1, */
+    /*   easing: 'linear', */
+    /*   duration: 500, */
+    /*   complete: () => { */
+    /*     this.showSurplus = true; */
+    /*     this.surplus.food -= Math.min(0, this.demand.plant_calories); */
+    /*     this.surplus.food -= Math.min(0, this.demand.animal_calories); */
+    /*     this.surplus.energy -= Math.min(0, this.demand.electricity); */
+    /*     this.surplus.energy -= Math.min(0, this.demand.fuel); */
+    /*     state.tokens.food += this.surplus.food; */
+    /*     state.tokens.energy += this.surplus.energy; */
+    /*   } */
+    /* }); */
+    /* let newDemand = {...this.demand}; */
+    /* this.processes.forEach((p) => { */
+    /*   newDemand[p.output] -= p.amount; */
+    /*   newDemand['emissions'] += p.emissions; */
+    /*   let demandTarget = {...newDemand}; */
+    /*   timeline.add({ */
+    /*     ...demandTarget, */
+    /*     complete: () => { */
+    /*       this.processes.shift(); */
+    /*     } */
+    /*   }, '+=200'); */
+    /* }); */
   },
   methods: {
   },
@@ -135,18 +160,6 @@ export default {
   flex-direction: column;
   justify-content: space-between;
 }
-.production--processes {
-  position: absolute;
-  top: 2em;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 0;
-  overflow: hidden;
-}
-.production--processes .production--process:first-child {
-  background: #888;
-}
 .production--demand {
   display: flex;
   justify-content: space-around;
@@ -160,13 +173,20 @@ export default {
 
 .production--process {
   text-align: center;
-  padding: 1em;
+  padding: 0.5em;
   background: #eee;
   border-radius: 0.5em;
   border: 1px solid;
-  margin: 1em;
+  margin: 0.5em;
+  width: 120px;
 }
 
+.production--surplus {
+  text-align: center;
+}
+.production button {
+  margin: 0 0 0.5em 0;
+}
 .production--surplus h2 {
   text-align: center;
 }
@@ -174,12 +194,19 @@ export default {
   display: flex;
   justify-content: space-around;
 }
-.production--process-amounts {
-  display: flex;
-  justify-content: space-around;
-}
 .production--surplus img {
   width: 22px;
   vertical-align: middle;
+}
+
+.production--processes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  overflow-y: scroll;
+}
+.production--process-name {
+  font-size: 0.8em;
+  border-bottom: 1px solid;
 }
 </style>

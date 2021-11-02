@@ -45,7 +45,7 @@ impl World {
     }
 
     pub fn outlook(&self) -> f32 {
-        self.regions.iter().map(|r| r.outlook).sum::<f32>()/self.regions.len() as f32
+        self.regions.iter().map(|r| r.outlook).sum::<f32>()
     }
 
     pub fn habitability(&self) -> f32 {

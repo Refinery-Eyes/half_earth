@@ -35,9 +35,16 @@
         <input type="number" min="0" v-model="localData.train_cost" :class="flags('train_cost')" />
       </div>
       <div class="checkbox">
+        <label :for="`${item.id}_default`">
+          Default
+          <Tip>Does a player start with this team?</Tip>
+        </label>
+        <input type="checkbox" :id="`${item.id}_default`" v-model="localData.default">
+      </div>
+      <div class="checkbox">
         <label :for="`${item.id}_locked`">
           Locked
-          <Tip>Is this process available to the player at the start?</Tip>
+          <Tip>Is this team available to the player at the start?</Tip>
         </label>
         <input type="checkbox" :id="`${item.id}_locked`" v-model="localData.locked">
       </div>
@@ -61,6 +68,7 @@
         <div>Train Cost</div>
         <div>{{flags('train_cost').invalid ? 'MISSING' : localData.train_cost }}PC</div>
       </div>
+      <div class="meta-pill" v-if="localData.default">Default</div>
       <div class="meta-pill" v-if="localData.locked" :class="flags('locked')">Locked{{flags('locked').invalid ? ' MISSING UNLOCKER' : ''}}</div>
       <div class="meta-pill" v-else-if="!localData.locked && flags('locked').invalid" :class="flags('locked')">UNLOCKABLE BUT NOT LOCKED</div>
       <template v-for="k in localData.aspects">

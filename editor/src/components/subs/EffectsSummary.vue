@@ -18,6 +18,8 @@ import Tip from '../Tip.vue';
 
 function formatParam(k, val) {
   switch (k) {
+    case 'Percent':
+      return `${val}%`;
     case 'Change':
       return `${val > 0 ? '+' : ''}${val}`;
     case 'PercentChange':
