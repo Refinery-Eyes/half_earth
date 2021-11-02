@@ -107,7 +107,7 @@ impl Project {
         match &mut self.status {
             Status::Building => {
                 self.progress += 1./years_for_points(self.points, self.cost);
-                if (self.progress - self.cost as f32).abs() <= 1e-4 {
+                if self.progress >= 1. {
                     if self.ongoing {
                         self.status = Status::Active;
                     } else {
