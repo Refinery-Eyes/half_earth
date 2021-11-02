@@ -72,10 +72,18 @@ impl GameInterface {
 
     pub fn start_project(&mut self, project_id: usize) {
         let project = &mut self.game.state.projects[project_id];
+        let mut effects: Vec<Effect> = Vec::new();
         if project.kind == ProjectType::Policy {
             project.status = Status::Active;
+            for effect in &project.effects {
+                effects.push(effect.clone());
+            }
         } else {
             project.status = Status::Building;
+        }
+
+        for effect in effects {
+            effect.apply(&mut self.game, None);
         }
     }
 
