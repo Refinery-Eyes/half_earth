@@ -16,6 +16,7 @@
       <div class="toast--body"><img :src="`/assets/icons/pips/${toast.icon}.png`"> {{toast.desc}}</div>
     </div>
   </div>
+  <Storyline :year="year" :play="playStoryline" />
 </div>
 </template>
 
@@ -31,6 +32,7 @@ import EventsMixin from 'components/EventsMixin';
 import regionsToTiles from '/assets/surface/regions_to_tiles.json';
 import iconEvents from '/assets/content/icon_events.json';
 import Production from './Production.vue';
+import Storyline from './Storyline.vue';
 
 const MS_PER_YEAR = 10000;
 
@@ -52,7 +54,8 @@ export default {
       showProduction: false,
       year: state.gameState.world.year,
       completedProjects: [],
-      stopped: false
+      stopped: false,
+      playStoryline: false,
     };
   },
   components: {
@@ -61,6 +64,7 @@ export default {
     Event,
     Project,
     Production,
+    Storyline,
   },
   mounted() {
     this.start();
@@ -105,6 +109,7 @@ export default {
     },
     startYear() {
       this.time = 0;
+      this.playStoryline = true;
       let last = performance.now();
       let iconEvents = game.rollIconEvents();
       console.log('ICON EVENTS:');
@@ -128,6 +133,7 @@ export default {
             this.completedProjects = game.step();
             this.year = state.gameState.world.year;
 
+            this.playStoryline = false;
             this.rollEvent();
             return;
 
@@ -223,13 +229,13 @@ export default {
           }, 250);
         }
 
-        this.toasts.push({
-          icon: ev.icon,
-          desc: `${ev.name} in ${region.name}`
-        });
-        if (this.toasts.length > 3) {
-          this.toasts.shift();
-        }
+        /* this.toasts.push({ */
+        /*   icon: ev.icon, */
+        /*   desc: `${ev.name} in ${region.name}` */
+        /* }); */
+        /* if (this.toasts.length > 3) { */
+        /*   this.toasts.shift(); */
+        /* } */
         return {hexIdx, mesh};
       }
     },
